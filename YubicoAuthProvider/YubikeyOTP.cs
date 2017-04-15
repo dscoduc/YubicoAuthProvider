@@ -1,56 +1,108 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+﻿using InsideIAM.Yubico.Library;
 using Microsoft.IdentityServer.Web.Authentication.External;
+using System.Configuration;
+using System.DirectoryServices;
+using System.Security.Claims;
 
 namespace YubicoAuthProvider
 {
-    class YubikeyOTP
+    public class YubikeyOTP : IAuthenticationAdapter
     {
-    }
+        private string userTokenIDAttributeField = ConfigurationManager.AppSettings["yubikeytokenidattributefield"];
+        private string upn;
+        private string registeredTokenID;
 
-    public class AuthenticationAdapter : IAuthenticationAdapter
-    {
-        public IAuthenticationAdapterMetadata Metadata
+        public IAdapterPresentation BeginAuthentication(Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public IAdapterPresentation BeginAuthentication(Claim identityClaim, HttpListenerRequest request, IAuthenticationContext context)
-        {
-            throw new NotImplementedException();
+            this.upn = identityClaim.Value;
+            return new AdapterPresentation();
         }
 
         public bool IsAvailableForUser(Claim identityClaim, IAuthenticationContext context)
         {
-            throw new NotImplementedException();
+            this.registeredTokenID = getTokenID(identityClaim.Value);
+            return !string.IsNullOrEmpty(this.registeredTokenID);
+        }
+
+        public IAuthenticationAdapterMetadata Metadata
+        {
+            get { return new AuthenticationAdapterMetadata(); }
         }
 
         public void OnAuthenticationPipelineLoad(IAuthenticationMethodConfigData configData)
         {
-            throw new NotImplementedException();
+
         }
 
         public void OnAuthenticationPipelineUnload()
         {
-            throw new NotImplementedException();
+
         }
 
-        public IAdapterPresentation OnError(HttpListenerRequest request, ExternalAuthenticationException ex)
+        public IAdapterPresentation OnError(System.Net.HttpListenerRequest request, ExternalAuthenticationException ex)
         {
-            throw new NotImplementedException();
+            return new AdapterPresentation(ex.Message, true);
         }
 
-        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, HttpListenerRequest request, out Claim[] claims)
+        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, System.Net.HttpListenerRequest request, out Claim[] outgoingClaims)
         {
-            throw new NotImplementedException();
+            string response = string.Empty;
+            outgoingClaims = new Claim[0];
+
+            if (ValidateProofData(proofData, context, out response))
+            {
+                outgoingClaims = new[]
+                {
+                    new Claim( "http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod",
+                    "http://schemas.microsoft.com/ws/2012/12/authmethod/otp" )
+                };
+
+                return null;
+            }
+            else
+            {
+                return new AdapterPresentation(response, false);
+            }
+        }
+
+        private bool ValidateProofData(IProofData proofData, IAuthenticationContext context, out string yubicoResponse)
+        {
+            if (proofData == null || proofData.Properties == null || !proofData.Properties.ContainsKey("pin"))
+                throw new ExternalAuthenticationException("Invalid Yubikey token", context);
+
+            string otp = proofData.Properties["pin"] as string;
+            string tokenID = otp.Substring(0, 12);
+
+            //string registeredTokenID = getTokenID(upn);
+            if (string.IsNullOrEmpty(otp) || 
+                    string.IsNullOrEmpty(this.registeredTokenID) || 
+                        this.registeredTokenID.ToLower() != tokenID.ToLower())
+            {
+                yubicoResponse = "Invalid or unregistered Token ID provided";
+                return false;
+            }
+
+            YubicoAnswer yubicoAnswer = new YubicoRequest().Validate(otp);
+            yubicoResponse = yubicoAnswer.Status.ToString();
+
+            return yubicoAnswer.IsValid;
+        }
+
+        private string getTokenID(string upn)
+        {
+            string searchSyntax = string.Format("(&(objectClass=user)(objectCategory=person)(userPrincipalName={0}))", upn);
+            using (DirectoryEntry entry = new DirectoryEntry())
+            using (DirectorySearcher mySearcher = new DirectorySearcher(entry, searchSyntax))
+            {
+                SearchResult result = mySearcher.FindOne();
+                var propertyCollection = result.Properties[this.userTokenIDAttributeField];
+                if (propertyCollection.Count > 0)
+                {
+                    return (string)result.Properties[this.userTokenIDAttributeField][0];
+                }
+                
+                return null;
+            }
         }
     }
 }
