@@ -4,6 +4,23 @@ using System.Configuration;
 using System.DirectoryServices;
 using System.Security.Claims;
 
+/// <summary>
+/// Copy .DLL files into C:\Windows\ADFS
+///     - YubicoAuthProvider.dll
+///     - Yubico.Library.dll
+/// 
+/// Add app.config sections to C:\Windows\ADFS\Microsoft.IdentityServer.Servicehost.exe.config
+/// 
+/// Update config with YubikeyCloud ID and Key
+/// 
+/// Register into AD FS using the following command:
+/// 
+///     $typeName = "YubicoAuthProvider.YubikeyOTP, YubicoAuthProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7649c32bf1339c5d"; 
+///     Register-AdfsAuthenticationProvider -TypeName $typeName -Name "YubicoAuthProvider" -Verbose
+/// 
+/// Restart AD FS services
+/// 
+/// </summary>
 namespace YubicoAuthProvider
 {
     public class YubikeyOTP : IAuthenticationAdapter

@@ -59,6 +59,7 @@
     <Compile Include="YubikeyOTP.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="YubicoAuthProviderKey.pfx" />
   </ItemGroup>
   <ItemGroup>
