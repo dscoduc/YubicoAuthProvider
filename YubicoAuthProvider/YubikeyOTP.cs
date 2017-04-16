@@ -3,31 +3,14 @@ using Microsoft.IdentityServer.Web.Authentication.External;
 using System.Configuration;
 using System.DirectoryServices;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
-/// <summary>
-/// Copy .DLL files into C:\Windows\ADFS
-///     - YubicoAuthProvider.dll
-///     - Yubico.Library.dll
-/// 
-/// Add app.config sections to C:\Windows\ADFS\Microsoft.IdentityServer.Servicehost.exe.config
-/// 
-/// Update config with YubikeyCloud ID and Key
-/// 
-/// Register into AD FS using the following command:
-/// 
-///     $typeName = "YubicoAuthProvider.YubikeyOTP, YubicoAuthProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7649c32bf1339c5d"; 
-///     Register-AdfsAuthenticationProvider -TypeName $typeName -Name "YubicoAuthProvider" -Verbose
-/// 
-/// Restart AD FS services
-/// 
-/// </summary>
 namespace YubicoAuthProvider
 {
     public class YubikeyOTP : IAuthenticationAdapter
     {
-        private string userTokenIDAttributeField = ConfigurationManager.AppSettings["yubikeytokenidattributefield"];
-        private string upn;
-        private string registeredTokenID;
+        private string upn { get; set; }
+        private string registeredTokenID { get; set; }
 
         public IAdapterPresentation BeginAuthentication(Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
@@ -38,23 +21,30 @@ namespace YubicoAuthProvider
         public bool IsAvailableForUser(Claim identityClaim, IAuthenticationContext context)
         {
             this.registeredTokenID = getTokenID(identityClaim.Value);
-            return !string.IsNullOrEmpty(this.registeredTokenID);
+
+            if (string.IsNullOrEmpty(this.registeredTokenID))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public IAuthenticationAdapterMetadata Metadata
         {
-            get { return new AuthenticationAdapterMetadata(); }
+            get
+            {
+                return new AuthenticationAdapterMetadata();
+            }
         }
 
         public void OnAuthenticationPipelineLoad(IAuthenticationMethodConfigData configData)
-        {
-
-        }
+        { }
 
         public void OnAuthenticationPipelineUnload()
-        {
-
-        }
+        { }
 
         public IAdapterPresentation OnError(System.Net.HttpListenerRequest request, ExternalAuthenticationException ex)
         {
@@ -70,8 +60,10 @@ namespace YubicoAuthProvider
             {
                 outgoingClaims = new[]
                 {
-                    new Claim( "http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod",
-                    "http://schemas.microsoft.com/ws/2012/12/authmethod/otp" )
+                    new Claim(
+                        "http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod",
+                        "http://schemas.microsoft.com/ws/2012/12/authmethod/otp"
+                    )
                 };
 
                 return null;
@@ -82,44 +74,51 @@ namespace YubicoAuthProvider
             }
         }
 
-        private bool ValidateProofData(IProofData proofData, IAuthenticationContext context, out string yubicoResponse)
+        private bool ValidateProofData(IProofData proofData, IAuthenticationContext context, out string response)
         {
-            if (proofData == null || proofData.Properties == null || !proofData.Properties.ContainsKey("pin"))
-                throw new ExternalAuthenticationException("Invalid Yubikey token", context);
-
-            string otp = proofData.Properties["pin"] as string;
-            string tokenID = otp.Substring(0, 12);
-
-            //string registeredTokenID = getTokenID(upn);
-            if (string.IsNullOrEmpty(otp) || 
-                    string.IsNullOrEmpty(this.registeredTokenID) || 
-                        this.registeredTokenID.ToLower() != tokenID.ToLower())
+            if (proofData == null ||
+                    proofData.Properties == null ||
+                        !proofData.Properties.ContainsKey("yubikeytoken"))
             {
-                yubicoResponse = "Invalid or unregistered Token ID provided";
+                throw new ExternalAuthenticationException("Invalid submission - no proof data provided", context);
+            }
+
+            string token = proofData.Properties["yubikeytoken"] as string;
+            if (string.IsNullOrEmpty(token) || token.Length < 13)
+            {
+                response = "Invalid Yubikey OTP provided";
                 return false;
             }
 
-            YubicoAnswer yubicoAnswer = new YubicoRequest().Validate(otp);
-            yubicoResponse = yubicoAnswer.Status.ToString();
+            string tokenID = token.Substring(0, 12);
+            if (!Regex.IsMatch(this.registeredTokenID, tokenID, RegexOptions.IgnoreCase))
+            {
+                response = string.Format("Unregistered Yubikey Token ID provided ({0})", tokenID);
+                return false;
+            }
+
+            YubicoAnswer yubicoAnswer = new YubicoRequest().Validate(token);
+            response = yubicoAnswer.Status.ToString();
 
             return yubicoAnswer.IsValid;
         }
 
         private string getTokenID(string upn)
         {
+            string userTokenIDAttributeField = ConfigurationManager.AppSettings["yubikeytokenidattributefield"];
             string searchSyntax = string.Format("(&(objectClass=user)(objectCategory=person)(userPrincipalName={0}))", upn);
             using (DirectoryEntry entry = new DirectoryEntry())
             using (DirectorySearcher mySearcher = new DirectorySearcher(entry, searchSyntax))
             {
                 SearchResult result = mySearcher.FindOne();
-                var propertyCollection = result.Properties[this.userTokenIDAttributeField];
+                var propertyCollection = result.Properties[userTokenIDAttributeField];
                 if (propertyCollection.Count > 0)
                 {
-                    return (string)result.Properties[this.userTokenIDAttributeField][0];
+                    return (string)result.Properties[userTokenIDAttributeField][0];
                 }
-                
-                return null;
             }
+
+            return null;
         }
     }
 }

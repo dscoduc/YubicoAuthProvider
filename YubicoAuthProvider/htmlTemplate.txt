@@ -1,0 +1,13 @@
+﻿<div id="loginArea">
+	<form method="post" id="loginForm" autocomplete="off">
+		<!-- These inputs are required by the presentation framework. Do not modify or remove -->
+		<input id="authMethod" type="hidden" name="AuthMethod" value="%AuthMethod%"/>
+		<input id="context" type="hidden" name="Context" value="%Context%"/>
+		<!-- End inputs are required by the presentation framework. -->
+		<div> <p id="pageIntroductionText">Insert the YubiKey into a USB port and tap the button.</p> </div>
+		<div><input id="yubikeytoken" class="text fullWidth" name="yubikeytoken" value="" placeholder="YubiKey" tabindex="1" autofocus="" /></div>
+		<div id="submissionArea">
+			<input id="continueButton" type="submit" name="Continue" value="Continue" tabindex="2" />
+		</div>
+	</form>
+</div>

@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("YubicoAuthProvider")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Yubico Yubikey OTP Authenentication Provider for AD FS 3.0")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Chris Blankenship")]
 [assembly: AssemblyProduct("YubicoAuthProvider")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]

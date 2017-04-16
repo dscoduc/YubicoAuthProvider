@@ -5,8 +5,21 @@ namespace YubicoAuthProvider
 {
     class AdapterPresentation : IAdapterPresentation, IAdapterPresentationForm
     {
-        private string message = String.Empty;
-        private bool isPermanentFailure;
+        private string errorMessage { get; set; }
+        private bool isPermanentFailure { get; set; }
+
+        public AdapterPresentation()
+        {
+            this.errorMessage = string.Empty;
+            this.isPermanentFailure = false;
+        }
+
+        public AdapterPresentation(string message, bool isPermanentFailure)
+        {
+            this.errorMessage = message;
+            this.isPermanentFailure = isPermanentFailure;
+        }
+
         public string GetPageTitle(int lcid)
         {
             return "Yubico Authentication";
@@ -14,39 +27,25 @@ namespace YubicoAuthProvider
 
         public string GetFormHtml(int lcid)
         {
-            string html = "";
-            if (!String.IsNullOrEmpty(this.message))
+            string htmlTemplate = string.Empty;
+            string errorMessageTemplate = "<div class=\"fieldMargin error smallText\"><label id=\"errorText\">{0}</label></div>";
+
+            if (!String.IsNullOrEmpty(this.errorMessage))
             {
-                html += "<p>" + message + "</p>";
+                htmlTemplate += string.Format(errorMessageTemplate, errorMessage);
             }
 
             if (!this.isPermanentFailure)
             {
-                html += "<form method=\"post\" id=\"loginForm\" autocomplete=\"off\">";
-                html += "<input id=\"authMethod\" type=\"hidden\" name=\"AuthMethod\" value=\"%AuthMethod%\"/>";
-                html += "<input id=\"context\" type=\"hidden\" name=\"Context\" value=\"%Context%\"/>";
-                html += "<div class=\"groupMargin\"> Insert the YubiKey into a USB port and tap the button. </div>";
-                html += "<div class=\"fieldMargin error smallText\"><label id=\"errorText\" for=\"\"></label></div>";
-                html += "<div><input id=\"pin\" class=\"text fullWidth\" name=\"pin\" value=\"\" placeholder=\"YubiKey\" tabindex=\"1\" autocomplete=\"off\" autofocus=\"\" /></div>";
-                html += "<div class=\"submitMargin\"><input id=\"continueButton\" type=\"submit\" name=\"Continue\" value=\"Continue\" tabindex=\"2\" /></div>";
-                html += "</form>";
+                htmlTemplate += Resource.htmlTemplate;
             }
-            return html;
+
+            return htmlTemplate;
         }
 
         public string GetFormPreRenderHtml(int lcid)
         {
             return string.Empty;
-        }
-        public AdapterPresentation()
-        {
-            this.message = string.Empty;
-            this.isPermanentFailure = false;
-        }
-        public AdapterPresentation(string message, bool isPermanentFailure)
-        {
-            this.message = message;
-            this.isPermanentFailure = isPermanentFailure;
         }
     }
 }
