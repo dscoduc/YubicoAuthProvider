@@ -4,7 +4,7 @@
 		<input id="authMethod" type="hidden" name="AuthMethod" value="%AuthMethod%"/>
 		<input id="context" type="hidden" name="Context" value="%Context%"/>
 		<!-- End inputs are required by the presentation framework. -->
-		<div> <p id="pageIntroductionText">Insert the YubiKey into a USB port and tap the button.</p> </div>
+		<div> <p id="pageIntroductionText">Please provide a one-time password using your YubiKey:</p> </div>
 		<div><input id="yubikeytoken" class="text fullWidth" name="yubikeytoken" value="" placeholder="YubiKey" tabindex="1" autofocus="" /></div>
 		<div id="submissionArea">
 			<input id="continueButton" type="submit" name="Continue" value="Continue" tabindex="2" />
