@@ -22,12 +22,12 @@ namespace YubicoAuthProvider
 
         public string GetPageTitle(int lcid)
         {
-            return "Yubico Authentication";
+            return "YubiKey Authentication";
         }
 
         public string GetFormHtml(int lcid)
         {
-            string htmlTemplate = "<div class=\"fieldMargin bigText\">Yubico OTP Authentication</div>";
+            string htmlTemplate = "<div class=\"fieldMargin bigText\">YubiKey OTP Authentication</div>";
 
             if (!String.IsNullOrEmpty(this.errorMessage))
                 htmlTemplate += string.Format("<div class=\"fieldMargin error smallText\">{0}</div>", errorMessage);

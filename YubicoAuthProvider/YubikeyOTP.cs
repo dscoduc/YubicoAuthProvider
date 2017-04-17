@@ -78,7 +78,7 @@ namespace YubicoAuthProvider
             string tokenID = token.Substring(0, 12);
             if (!registeredTokenIDs.Contains(tokenID))
             {
-                response = string.Format("Authentication failed: Unknown Yubikey ID ({0})", tokenID);
+                response = string.Format("Authentication failed: Unknown YubiKey ID ({0})", tokenID);
                 return false;
             }
 
