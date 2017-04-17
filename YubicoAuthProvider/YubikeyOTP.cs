@@ -86,21 +86,25 @@ namespace YubicoAuthProvider
             string token = proofData.Properties["yubikeytoken"] as string;
             if (string.IsNullOrEmpty(token) || token.Length < 13)
             {
-                response = "Invalid Yubikey OTP provided";
+                response = "Authentication failed: Bad One-Time Password";
                 return false;
             }
 
             string tokenID = token.Substring(0, 12);
             if (!Regex.IsMatch(this.registeredTokenID, tokenID, RegexOptions.IgnoreCase))
             {
-                response = string.Format("Unregistered Yubikey Token ID provided ({0})", tokenID);
+                response = string.Format("Authentication failed: Unknown Yubikey ID ({0})", tokenID);
                 return false;
             }
 
             YubicoAnswer yubicoAnswer = new YubicoRequest().Validate(token);
-            response = yubicoAnswer.Status.ToString();
+            if(!yubicoAnswer.IsValid)
+            {
+                response = string.Format("Authentication failed: {0}", yubicoAnswer.Status.ToString());
+                return false;
+            }
 
-            return yubicoAnswer.IsValid;
+            return true;
         }
 
         private string getTokenID(string upn)
