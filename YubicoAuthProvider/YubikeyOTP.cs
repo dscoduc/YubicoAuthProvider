@@ -109,7 +109,12 @@ namespace YubicoAuthProvider
 
         private string getTokenID(string upn)
         {
+            /// Requires the entry "yubikeytokenidattributefield" in the AD FS configuration file located
+            /// at C:\Windows\ADFS\Microsoft.IdentityServer.Servicehost.exe.config which specifies the
+            /// Active Directory attribute storing the Yubikey Token ID for the user object.    
+            ///    ex: Key="yubikeytokenidattributefield" Value="extensionAttribute10"
             string userTokenIDAttributeField = ConfigurationManager.AppSettings["yubikeytokenidattributefield"];
+
             string searchSyntax = string.Format("(&(objectClass=user)(objectCategory=person)(userPrincipalName={0}))", upn);
             using (DirectoryEntry entry = new DirectoryEntry())
             using (DirectorySearcher mySearcher = new DirectorySearcher(entry, searchSyntax))
@@ -118,6 +123,7 @@ namespace YubicoAuthProvider
                 var propertyCollection = result.Properties[userTokenIDAttributeField];
                 if (propertyCollection.Count > 0)
                 {
+                    //TODO: Handle multi-value attribute instead of single value attribute
                     return (string)result.Properties[userTokenIDAttributeField][0];
                 }
             }
