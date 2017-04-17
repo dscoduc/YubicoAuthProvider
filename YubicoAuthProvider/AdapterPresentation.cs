@@ -27,18 +27,13 @@ namespace YubicoAuthProvider
 
         public string GetFormHtml(int lcid)
         {
-            string htmlTemplate = string.Empty;
-            string errorMessageTemplate = "<div class=\"fieldMargin error smallText\"><label id=\"errorText\">{0}</label></div>";
+            string htmlTemplate = "<div class=\"fieldMargin bigText\">Yubico OTP Authentication</div>";
 
             if (!String.IsNullOrEmpty(this.errorMessage))
-            {
-                htmlTemplate += string.Format(errorMessageTemplate, errorMessage);
-            }
+                htmlTemplate += string.Format("<div class=\"fieldMargin error smallText\">{0}</div>", errorMessage);
 
             if (!this.isPermanentFailure)
-            {
                 htmlTemplate += Resource.htmlTemplate;
-            }
 
             return htmlTemplate;
         }

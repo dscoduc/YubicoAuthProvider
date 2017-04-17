@@ -10,26 +10,17 @@ namespace YubicoAuthProvider
         
         public string AdminName
         {
-            get
-            {
-                return this.providerName;
-            }
+            get { return this.providerName; }
         }
 
         public virtual string[] AuthenticationMethods
         {
-            get
-            {
-                return new string[] { "http://schemas.microsoft.com/ws/2012/12/authmethod/otp" };
-            }
+            get { return new string[] { "http://schemas.microsoft.com/ws/2012/12/authmethod/otp" }; }
         }
 
         public int[] AvailableLcids
         {
-            get
-            {
-                return new[] { new CultureInfo("en-us").LCID };
-            }
+            get { return new[] { new CultureInfo("en-us").LCID }; }
         }
 
         public Dictionary<int, string> FriendlyNames
@@ -54,18 +45,12 @@ namespace YubicoAuthProvider
 
         public string[] IdentityClaims
         {
-            get
-            {
-                return new[] { "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn" };
-            }
+            get { return new[] { "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn" }; }
         }
 
         public bool RequiresIdentity
         {
-            get
-            {
-                return true;
-            }
+            get { return true; }
         }
     }
 }
