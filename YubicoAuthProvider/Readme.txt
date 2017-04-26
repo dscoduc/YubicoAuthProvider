@@ -1,4 +1,5 @@
 ﻿Implementation steps:
+ =============
 
 1. Copy project .DLL files into C:\Windows\ADFS
 	- YubicoAuthProvider.dll
@@ -14,8 +15,9 @@
 	(ex. key="yubikeytokenidattributefield" value="departmentNumber")
 
 5. Use PowerShell to register provider into AD FS 
-	- $typeName = "YubicoAuthProvider.YubikeyOTP, YubicoAuthProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7649c32bf1339c5d"; 
-	- Register-AdfsAuthenticationProvider -TypeName $typeName -Name "YubicoAuthProvider" -Verbose
+
+```$typeName = "YubicoAuthProvider.YubikeyOTP, YubicoAuthProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7649c32bf1339c5d"; 
+Register-AdfsAuthenticationProvider -TypeName $typeName -Name "YubicoAuthProvider" -Verbose```
 
 6. Restart AD FS services
 
