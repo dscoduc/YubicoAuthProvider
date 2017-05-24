@@ -17,6 +17,10 @@ Implementation steps:
 5. Use PowerShell to register provider into AD FS 
 
 ```
+[System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+$publisher = New-Object System.EnterpriseServices.Internal.Publish
+$publisher.GacInstall("c:\windows\adfs\YubicoAuthProvider.dll")
+
 $typeName = "YubicoAuthProvider.YubikeyOTP, YubicoAuthProvider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7649c32bf1339c5d"; 
 Register-AdfsAuthenticationProvider -TypeName $typeName -Name "YubicoAuthProvider" -Verbose
 ```
