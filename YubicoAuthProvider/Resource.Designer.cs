@@ -19,7 +19,7 @@ namespace YubicoAuthProvider {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resource {
@@ -67,7 +67,8 @@ namespace YubicoAuthProvider {
         ///		&lt;input id=&quot;authMethod&quot; type=&quot;hidden&quot; name=&quot;AuthMethod&quot; value=&quot;%AuthMethod%&quot;/&gt;
         ///		&lt;input id=&quot;context&quot; type=&quot;hidden&quot; name=&quot;Context&quot; value=&quot;%Context%&quot;/&gt;
         ///		&lt;!-- End inputs are required by the presentation framework. --&gt;
-        ///		&lt;div class=&quot;groupMargin&quot;&gt; &lt;p id=&quot;pageIntroductionText&quot;&gt;Insert the YubiKey into a USB port and tap the button.&lt;/p&gt; &lt;/di [rest of string was truncated]&quot;;.
+        ///		&lt;div&gt; &lt;p id=&quot;pageIntroductionText&quot;&gt;Provide a one-time password using your YubiKey:&lt;/p&gt; &lt;/div&gt;
+        ///		&lt;div&gt;&lt;input id=&quot;yubik [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string htmlTemplate {
             get {

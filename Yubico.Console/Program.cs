@@ -1,50 +1,60 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="Program.cs" company="INSIDE-IAM">
-//     Copyright (c) Inside IAM. All rights reserved.
-// </copyright>
-// <author>Marc Morel</author>
-//-----------------------------------------------------------------------
-namespace InsideIAM.Yubico.Library
+﻿namespace Yubico.Console
 {
     using System;
+    using System.Configuration;
     using System.Globalization;
-    using InsideIAM.Yubico.Library;
+    using YubicoDotNetClient;
 
-    /// <summary>
-    /// Console Yubico Client
-    /// </summary>
     public class Program
     {
-        /// <summary>
-        /// Main of the current console program
-        /// </summary>
-        /// <param name="args">Arguments of the current execution</param>
-        /// <returns>A negative value if an error occured, 0 otherwise</returns>
+        static string yubico_api_client_id
+        { 
+            get
+            {
+                return ConfigurationManager.AppSettings.Get("yubico_api_client_id") ?? 
+                    throw new System.NullReferenceException("No Yubico Client ID found in App.config");
+            }
+        }
+
+        static string yubico_api_secret_key
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings.Get("yubico_api_secret_key") ?? 
+                    throw new System.NullReferenceException("No Yubico API Secrey Key found in App.config");
+            }
+        }
+
         public static int Main(string[] args)
         {
+            int exitCode = 0;
+
             try
             {
-                int result = 0;
-                if (args == null || args.Length == 0)
+                Console.WriteLine("Press on your Yubikey to get the OTP value.  Do NOT add any quotes or other characters to the input.");
+                string otp = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(otp) || otp.Length == 0)
                 {
-                    Console.WriteLine("Usage : Yubico.Console 'OTP'. You must press on your YubiKey to get the 'OTP' value. Do NOT type the quotes ''.");
-                    result = -1;
+                    Console.WriteLine("Unable to read Yubikey input.");
+                    exitCode = -1;
                 }
                 else
                 {
-                    YubicoRequest request = new YubicoRequest();
-                    string otp = args[0];
-                    YubicoAnswer answer = request.Validate(otp);
-                    Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "Validation status is : {0}", answer.Status.ToString()));
+                    var client = new YubicoClient(yubico_api_client_id, yubico_api_secret_key);
+                    var yubicoAnswer = client.VerifyAsync(otp).GetAwaiter().GetResult();
+                    Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "Validation status is : {0}.", yubicoAnswer.Status.ToString()));
                 }
-
-                return result;
             }
             catch (Exception exception)
             {
                 Console.WriteLine(exception.Message);
-                return -2;
+                exitCode = -2;
             }
+
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
+            return exitCode;
         }
     }
 }

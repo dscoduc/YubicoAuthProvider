@@ -1,10 +1,10 @@
-﻿using InsideIAM.Yubico.Library;
-using Microsoft.IdentityServer.Web.Authentication.External;
+﻿using Microsoft.IdentityServer.Web.Authentication.External;
 using System.Collections.Generic;
 using System.Configuration;
 using System.DirectoryServices;
 using System.Net;
 using System.Security.Claims;
+using YubicoDotNetClient;
 
 namespace YubicoAuthProvider
 {
@@ -12,6 +12,33 @@ namespace YubicoAuthProvider
     {
         private string upn { get; set; }
         private List<string> registeredTokenIDs { get; set; }
+
+        private static string active_directory_token_id_attribute
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings.Get("active_directory_token_id_attribute") ?? 
+                    throw new System.NullReferenceException("No Active Directory Token Id Attribute found in App.config");
+            }
+        }
+
+        private string yubico_api_client_id
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings.Get("yubico_api_client_id") ?? 
+                    throw new System.NullReferenceException("No Yubico Client ID found in App.config");
+            }
+        }
+
+        private string yubico_api_secret_key
+        { 
+            get
+            {
+                return ConfigurationManager.AppSettings.Get("yubico_api_secret_key") ?? 
+                    throw new System.NullReferenceException("No Yubico API Secrey Key found in App.config");
+            }
+        }
 
         public IAuthenticationAdapterMetadata Metadata
         {
@@ -43,7 +70,7 @@ namespace YubicoAuthProvider
             string response = string.Empty;
             outgoingClaims = new Claim[0];
 
-            if (ValidateProofData(proofData, context, out response))
+            if (ValidateProofDataAsync(proofData, context, out response))
             {
                 outgoingClaims = new[]
                 {
@@ -59,7 +86,7 @@ namespace YubicoAuthProvider
             return new AdapterPresentation(response, false);
         }
 
-        private bool ValidateProofData(IProofData proofData, IAuthenticationContext context, out string response)
+        private bool ValidateProofDataAsync(IProofData proofData, IAuthenticationContext context, out string response)
         {
             if (proofData == null ||
                     proofData.Properties == null ||
@@ -68,33 +95,37 @@ namespace YubicoAuthProvider
                 throw new ExternalAuthenticationException("Invalid submission - no proof data provided", context);
             }
 
-            string token = proofData.Properties["yubikeyotp"] as string;
-            if (string.IsNullOrEmpty(token) || token.Length < 13)
+            string otp = proofData.Properties["yubikeyotp"] as string;
+            if (string.IsNullOrEmpty(otp) || otp.Length < 13)
             {
                 response = "Authentication failed: Bad One-Time Password";
                 return false;
             }
 
-            string tokenID = token.Substring(0, 12);
+            string tokenID = otp.Substring(0, 12);
             if (!registeredTokenIDs.Contains(tokenID))
             {
                 response = string.Format("Authentication failed: Unknown YubiKey ID ({0})", tokenID);
                 return false;
             }
 
-            YubicoAnswer yubicoAnswer = new YubicoRequest().Validate(token);
-            response = yubicoAnswer.Status.ToString();
+            var client = new YubicoClient(yubico_api_client_id, yubico_api_secret_key);
+            var yubicoAnswer = client.VerifyAsync(otp).GetAwaiter().GetResult();
 
-            if (!yubicoAnswer.IsValid)
-                response = string.Format("Authentication failed: {0}", response);
-
-            return yubicoAnswer.IsValid;
+            if (yubicoAnswer == null || yubicoAnswer.Status != YubicoResponseStatus.Ok)
+            {
+                response = string.Format("Authentication failed: {0}", yubicoAnswer.Status.ToString());
+                return false;
+            }
+            else
+            {
+                response = "Authenticated completed successfully";
+                return true;
+            }            
         }
 
         private static List<string> getRegisteredTokenIDs(string upn)
         {
-            string userTokenIDAttributeField = ConfigurationManager.AppSettings["yubikeytokenidattributefield"];
-
             List<string> registeredTokenIDs = new List<string>();
             string searchSyntax = string.Format("(&(objectClass=user)(objectCategory=person)(userPrincipalName={0}))", upn);
 
@@ -104,7 +135,7 @@ namespace YubicoAuthProvider
                 SearchResult result = mySearcher.FindOne();
                 if (null != result)
                 {
-                    var propertyCollection = result.Properties[userTokenIDAttributeField];
+                    var propertyCollection = result.Properties[active_directory_token_id_attribute];
                     if (propertyCollection.Count > 0)
                         foreach (object property in propertyCollection)
                             registeredTokenIDs.Add(property as string);

@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YubicoAuthProvider", "YubicoAuthProvider\YubicoAuthProvider.csproj", "{2464C1DC-ACDA-41C1-9682-319C03195B80}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yubico.Library", "Yubico.Library\Yubico.Library.csproj", "{AC77B6DC-95C6-4789-848D-0194AB0FC95E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yubico.Console", "Yubico.Console\Yubico.Console.csproj", "{CB6A3E69-C9C1-4534-9699-0CB56506A300}"
 EndProject
@@ -19,10 +17,6 @@ Global
 		{2464C1DC-ACDA-41C1-9682-319C03195B80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2464C1DC-ACDA-41C1-9682-319C03195B80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2464C1DC-ACDA-41C1-9682-319C03195B80}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AC77B6DC-95C6-4789-848D-0194AB0FC95E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AC77B6DC-95C6-4789-848D-0194AB0FC95E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AC77B6DC-95C6-4789-848D-0194AB0FC95E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AC77B6DC-95C6-4789-848D-0194AB0FC95E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CB6A3E69-C9C1-4534-9699-0CB56506A300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CB6A3E69-C9C1-4534-9699-0CB56506A300}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB6A3E69-C9C1-4534-9699-0CB56506A300}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -30,5 +24,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7C15C52B-BD1F-4141-A5DA-A1A10FF422A1}
 	EndGlobalSection
 EndGlobal
