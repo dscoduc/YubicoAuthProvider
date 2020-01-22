@@ -1,5 +1,6 @@
 ﻿namespace Yubico.Console
 {
+    using NLog;
     using System;
     using System.Configuration;
     using System.Globalization;
@@ -7,6 +8,8 @@
 
     public class Program
     {
+        private static Logger log = LogManager.GetCurrentClassLogger();
+
         static string yubico_api_client_id
         { 
             get
