@@ -1,5 +1,6 @@
 ﻿using Microsoft.IdentityServer.Web.Authentication.External;
 using NLog;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.DirectoryServices;
@@ -12,8 +13,11 @@ namespace YubicoAuthProvider
     public class YubikeyOTP : IAuthenticationAdapter
     {
         private static Logger log = LogManager.GetCurrentClassLogger();
-        private string upn { get; set; }
-        private List<string> registeredTokenIDs { get; set; }
+
+        // keys for data to be stored in Context
+        private const string USERUPN = "userUPN";
+        private const string REGISTEREDTOKENIDS = "tokenIDs";
+
         private static string active_directory_token_id_attribute
         {
             get
@@ -53,20 +57,23 @@ namespace YubicoAuthProvider
 
         public bool IsAvailableForUser(Claim identityClaim, IAuthenticationContext context)
         {
-            this.upn = identityClaim.Value;
+            log.Debug(string.Format("New Yubikey authentication request for {0} [{1}]", identityClaim.Value, context.ActivityId));
 
-            log.Debug("Checking if Yubikey authentication is available for {0}", this.upn);
+            // add userPrincipalName into context data
+            context.Data.Add(USERUPN, identityClaim.Value);
 
-            this.registeredTokenIDs = getRegisteredTokenIDs(this.upn);
+            // get registered token IDs for userPrincipalName
+            string[] registeredTokenIDs = getRegisteredTokenIDs(identityClaim.Value);
 
-            if (this.registeredTokenIDs.Count > 0)
+            if (null != registeredTokenIDs && registeredTokenIDs.Length > 0)
             {
-                log.Debug("Available - registered Token IDs : {0}", string.Join(",", this.registeredTokenIDs));
+                log.Debug("Registered Token IDs avialable for {0} [{1}] - {2}", identityClaim.Value, context.ActivityId, string.Join(",", registeredTokenIDs));
+                context.Data.Add(REGISTEREDTOKENIDS, string.Join(",", registeredTokenIDs));
                 return true;
             }
             else
             {
-                log.Debug("Unavailable - no registered Token IDs found in Active Directory.");
+                log.Debug(string.Format("No registered Token IDs found in AD for {0} [{1}]", identityClaim.Value, context.ActivityId));
                 return false;
             }
         }
@@ -83,18 +90,21 @@ namespace YubicoAuthProvider
             string responseMessage = null;
             outgoingClaims = new Claim[0];
 
-            log.Debug("Authentication beginning for {0}", this.upn);
+            // retrieve context data stored earlier
+            string userPrincipalName = (string)context.Data[USERUPN];
 
+            log.Debug(string.Format("Authentication beginning for {0} [{1}]", userPrincipalName, context.ActivityId));
             bool isValidated = ValidateProofDataAsync(proofData, context, out responseMessage);
-
-            log.Debug(responseMessage);
 
             if (!isValidated)
             {
+                log.Debug(string.Format("Authentication failed for {0} [{1}] - {2}", userPrincipalName, context.ActivityId, responseMessage));
                 authResponse = new AdapterPresentation(responseMessage, false);
             }
             else
             {
+                log.Debug(string.Format("Authentication succeeded for {0} [{1}]", userPrincipalName, context.ActivityId));
+
                 outgoingClaims = new[]
                 {
                     new Claim(
@@ -109,6 +119,9 @@ namespace YubicoAuthProvider
 
         private bool ValidateProofDataAsync(IProofData proofData, IAuthenticationContext context, out string response)
         {
+            string userPrincipalName = (string)context.Data[USERUPN];
+            string registeredTokenIDs = (string)context.Data[REGISTEREDTOKENIDS];
+
             if (proofData == null ||
                     proofData.Properties == null ||
                         !proofData.Properties.ContainsKey("yubikeyotp"))
@@ -121,23 +134,31 @@ namespace YubicoAuthProvider
 
             if (string.IsNullOrEmpty(otp) || otp.Length < 13)
             {
-                response = "Authentication failed: Invalid One-Time Password received";
+                response = "Invalid One-Time Password received";
                 return false;
             }
 
-            string tokenID = otp.Substring(0, 12);
-            if (!registeredTokenIDs.Contains(tokenID))
+            // extract the first 12 characters of the token id and convert to all lowercase
+            string tokenID = otp.Substring(0, 12).ToLower();
+
+            if (Array.IndexOf(registeredTokenIDs.Split(','), tokenID) == -1)
             {
-                response = string.Format("Authentication failed: Token ID ({0}) not associated with {1}", tokenID, upn);
+                response = string.Format("Token ID ({0}) not associated with {1}", tokenID, userPrincipalName);
                 return false;
             }
+
+            //if (!registeredTokenIDs.Contains(tokenID))
+            //{
+            //    response = string.Format("Token ID ({0}) not associated with {1}", tokenID, userPrincipalName);
+            //    return false;
+            //}
 
             var client = new YubicoClient(yubico_api_client_id, yubico_api_secret_key);
             var yubicoAnswer = client.VerifyAsync(otp).GetAwaiter().GetResult();
 
             if (yubicoAnswer == null || yubicoAnswer.Status != YubicoResponseStatus.Ok)
             {
-                response = string.Format("Authentication failed: {0}", yubicoAnswer.Status.ToString());
+                response = yubicoAnswer.Status.ToString();
                 return false;
             }
 
@@ -145,7 +166,7 @@ namespace YubicoAuthProvider
             return true;
         }
 
-        private static List<string> getRegisteredTokenIDs(string upn)
+        private static string[] getRegisteredTokenIDs(string upn)
         {
             List<string> registeredTokenIDs = new List<string>();
             string searchSyntax = string.Format("(&(objectClass=user)(objectCategory=person)(userPrincipalName={0}))", upn);
@@ -175,7 +196,7 @@ namespace YubicoAuthProvider
                 searchResult = null;
             }
 
-            return registeredTokenIDs;
+            return registeredTokenIDs.ToArray();
         }
     }
 }
